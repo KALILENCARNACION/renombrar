@@ -1,5 +1,4 @@
 {
-  "output_folder": "C:/Users/kalil/OneDrive/Documentos/igualas/DEBITO SCHOOL/facturas",
   "selected_output_folder": "C:/Users/kalil/OneDrive/Documentos/igualas/DEBITO SCHOOL/facturas",
   "saved_folders": [
     "C:/Users/kalil/OneDrive/Documentos/igualas/KALIL PF/FACTURAS/INGRESOS",
@@ -18,21 +17,21 @@
     }
   ],
   "copy_source_pdf": "C:/Users/kalil/OneDrive/Documentos/igualas/KALIL PF/PROPUESTAS/PROPUESTA DE ASESORIA DE CONSTRUCCION PARA NATALIA.pdf",
-  "organizer_folder": "",
-  "template_workbook_path": "",
-  "template_sheet_password": "",
   "pomodoro_settings": {
     "auto_start_break": true,
     "auto_start_work": false
   },
   "pomodoro_state": {
-    "date": "2026-06-19",
-    "completed_count": 9,
+    "date": "2026-07-03",
+    "completed_count": 0,
     "phase": "work",
     "remaining_seconds": 1500,
     "running": false,
+    "phase_end_at": null,
     "ten_minute_alert_played": false,
     "selected_task_id": null,
-    "selected_flow_id": "b122dce9-6bb1-4824-8dee-db2f5ac50889"
+    "selected_flow_id": null,
+    "completed_task_ids": [],
+    "flow_pomodoros": {}
   }
 }
