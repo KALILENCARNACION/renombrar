@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://127.0.0.1:8765" />
+    <title>Renombrar PDF</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="app-bar">
+      <div class="brand" aria-label="Renombrar">
+        <div class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7zM14 3v5h5M9.5 13h5M9.5 17h3"/></svg>
+        </div>
+        <div><span>Renombrar</span><small>PDF inteligente</small></div>
+      </div>
+      <nav aria-label="Módulos">
+        <button id="nav-renamer" class="nav-item active" type="button" data-page="rename-page">Renombrar PDF</button>
+        <button id="nav-proposals" class="nav-item" type="button" data-page="proposal-page">Copiar propuesta</button>
+        <button id="nav-clients" class="nav-item" type="button" data-page="clients-page">Clientes</button>
+        <button id="nav-fiscal" class="nav-item" type="button" data-page="fiscal-page">Plantilla fiscal</button>
+        <button id="nav-pomodoro" class="nav-item" type="button" data-page="pomodoro-page">Pomodoro</button>
+        <button class="nav-item" type="button" disabled>Más módulos próximamente</button>
+      </nav>
+      <div id="status-pill" class="status-pill pending" role="status">
+        <span class="status-dot"></span><span id="status-text">Conectando…</span>
+      </div>
+    </header>
+
+    <main>
+    <section id="rename-page" class="page-shell app-page">
+      <section class="destination-card">
+        <button id="destination-toggle" class="destination-toggle" type="button" aria-expanded="false" aria-controls="destination-panel">
+          <span class="settings-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 8.8a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4ZM19 13.4v-2.8l-2-.7-.5-1.2.9-1.9-2-2-1.9.9-1.2-.5-.7-2H8.8l-.7 2-1.2.5L5 4.8l-2 2 .9 1.9-.5 1.2-2 .7v2.8l2 .7.5 1.2-.9 1.9 2 2 1.9-.9 1.2.5.7 2h2.8l.7-2 1.2-.5 1.9.9 2-2-.9-1.9.5-1.2z"/></svg>
+          </span>
+          <span><b>Configuración de destino</b><small id="destination-summary">Cargando rutas…</small></span>
+          <svg class="chevron" viewBox="0 0 24 24"><path d="m7 9 5 5 5-5"/></svg>
+        </button>
+        <div id="destination-panel" class="destination-panel" hidden>
+          <div class="field-group">
+            <label for="destination-select">Carpeta general</label>
+            <div class="field-row">
+              <select id="destination-select"></select>
+              <button id="add-destination" class="outline-button" type="button">Elegir carpeta</button>
+            </div>
+            <p>Se utiliza cuando el PDF no coincide con una ruta automática de empresa.</p>
+          </div>
+          <div class="routes-block">
+            <div class="routes-heading"><span>Rutas automáticas</span><strong id="route-count">0 activas</strong></div>
+            <div id="route-list" class="route-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace" aria-labelledby="page-title">
+        <div class="intro">
+          <span class="step-label">RENOMBRAR PDF</span>
+          <h1 id="page-title">¿Qué PDF procesamos hoy?</h1>
+          <p>Suelta tus facturas aquí para analizarlas y renombrarlas automáticamente.</p>
+        </div>
+
+        <button id="drop-zone" class="drop-zone" type="button">
+          <span class="upload-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7zM14 3v5h5M12 17v-6M9.5 13.5 12 11l2.5 2.5"/></svg>
+          </span>
+          <strong>Arrastra y suelta tus archivos</strong>
+          <span>o haz clic para seleccionar uno o varios PDF</span>
+        </button>
+
+        <button id="process-button" class="process-button" type="button" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-7 12h6l-1 8 7-12h-6z"/></svg>
+          <span>Procesar</span>
+        </button>
+
+        <div id="notice" class="notice" aria-live="polite" hidden></div>
+
+        <section id="files-section" class="files-section" hidden aria-labelledby="files-title">
+          <div class="section-title-row">
+            <div><span class="step-label">ARCHIVOS</span><h2 id="files-title">Facturas seleccionadas</h2></div>
+            <button id="clear-button" class="text-button" type="button">Limpiar todo</button>
+          </div>
+          <div id="file-list" class="file-list"></div>
+        </section>
+      </section>
+    </section>
+
+    <section id="proposal-page" class="proposal-page app-page" hidden>
+      <div class="proposal-hero">
+        <div>
+          <span class="step-label">COPIAR PROPUESTA</span>
+          <h1>Copiar propuesta PDF</h1>
+          <p>Selecciona un PDF base, escribe el nombre variable y crea una copia renombrada en la misma carpeta.</p>
+        </div>
+        <article class="proposal-saved-card">
+          <small>PDF base guardado</small>
+          <strong id="proposal-saved-name">Sin PDF guardado</strong>
+        </article>
+      </div>
+
+      <div class="proposal-layout">
+        <section class="proposal-card" aria-labelledby="proposal-base-title">
+          <h2 id="proposal-base-title">Archivo base</h2>
+          <p>La ruta queda guardada para reutilizarla. Puedes cambiarla o borrarla cuando quieras.</p>
+          <div class="proposal-current">
+            <small>PDF actual</small>
+            <span id="proposal-source-label">Sin PDF base seleccionado.</span>
+          </div>
+          <div class="proposal-file-actions">
+            <button id="proposal-select-source" class="proposal-outline" type="button">Seleccionar PDF base</button>
+            <button id="proposal-change-source" class="proposal-outline" type="button">Cambiar PDF base</button>
+            <button id="proposal-clear-source" class="proposal-danger" type="button">Borrar ruta guardada</button>
+          </div>
+          <label class="proposal-field"><span>Nombre variable</span><input id="proposal-variable-name" type="text" autocomplete="off" /></label>
+          <label class="proposal-field"><span>Tipo de propuesta</span><select id="proposal-type"><option value="mensual">mensual</option><option value="renta">renta</option></select></label>
+          <div class="proposal-result" id="proposal-result">Resultado: escribe un nombre para generar la vista previa.</div>
+          <button id="proposal-create" class="proposal-primary" type="button">Crear copia renombrada</button>
+          <span id="proposal-status" class="proposal-status"></span>
+        </section>
+
+        <section class="proposal-card proposal-preview-card" aria-labelledby="proposal-preview-title">
+          <h2 id="proposal-preview-title">Vista previa</h2>
+          <p>La copia se genera en la misma carpeta del PDF base.</p>
+          <div class="proposal-preview-meta">
+            <strong id="proposal-preview-file">Archivo nuevo: pendiente</strong>
+            <span id="proposal-preview-folder">Carpeta: pendiente</span>
+          </div>
+          <div class="proposal-preview-box">
+            <span id="proposal-preview-empty">Selecciona un PDF base y escribe un nombre.</span>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="clients-page" class="clients-page app-page" hidden>
+      <div class="clients-shell">
+        <aside class="client-directory">
+          <div class="directory-title"><span>Directorio</span><small id="client-count">0 clientes</small></div>
+          <input id="client-search" class="client-search" type="search" placeholder="Buscar cliente..." autocomplete="off" />
+          <div id="client-list" class="client-list"><p>Cargando clientes...</p></div>
+        </aside>
+
+        <section class="client-editor">
+          <div class="client-form-grid">
+            <label><span>Nombre</span><input id="client-name" type="text" autocomplete="off" /></label>
+            <label class="copy-field"><span>RNC</span><span><input id="client-rnc" type="text" autocomplete="off" /><button id="client-copy-rnc" type="button">Copiar</button></span></label>
+            <label class="client-wide-field client-location-field">
+              <span>Ubicación en PC</span>
+              <div class="client-path-row">
+                <input id="client-pc-location" type="text" autocomplete="off" placeholder="C:\\Users\\..." />
+                <button id="client-location-select" class="client-icon-button" type="button" title="Seleccionar carpeta" aria-label="Seleccionar carpeta">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2h7.5A2.5 2.5 0 0 1 21 9.5v7A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5zM12 11v5M9.5 13.5h5"/></svg>
+                </button>
+                <button id="client-location-open" class="client-icon-button" type="button" title="Abrir carpeta" aria-label="Abrir carpeta">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v7M13 11l8-8M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
+                </button>
+              </div>
+            </label>
+            <div class="client-resource-inline">
+              <input id="client-resource" type="hidden" autocomplete="off" />
+              <button id="client-resource-folder" class="client-resource-action" type="button" title="Seleccionar recurso">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v5h5"/></svg>
+                <span id="client-resource-label">Sin recurso guardado</span>
+              </button>
+              <button id="client-resource-clear" class="client-icon-button danger" type="button" title="Borrar recurso guardado" aria-label="Borrar recurso guardado" disabled>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M10 11v6M14 11v6M6 6l1 15h10l1-15"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="client-card compact">
+            <button id="client-tss-toggle" class="client-accordion" type="button" aria-expanded="false">
+              <span>Datos TSS</span><small>Información fiscal / seguridad social</small>
+            </button>
+            <div class="client-tss-fields" hidden>
+              <label class="copy-field"><span>Cédula</span><span><input id="client-cedula" type="text" autocomplete="off" /><button id="client-copy-cedula" type="button">Copiar</button></span></label>
+              <label class="copy-field"><span>Clase TSS</span><span><input id="client-tss" type="text" autocomplete="off" /><button id="client-copy-tss" type="button">Copiar</button></span></label>
+            </div>
+          </div>
+
+          <div class="client-description">
+            <div class="description-title"><span>Descripción del trabajo</span><small>Detalles específicos</small></div>
+            <textarea id="client-description" placeholder="Detalles específicos del proyecto o servicios contratados..."></textarea>
+          </div>
+
+          <footer class="client-actions">
+            <button id="client-delete" class="client-delete" type="button" disabled>ELIMINAR CLIENTE</button>
+            <button id="client-new" class="client-secondary" type="button">NUEVO CLIENTE</button>
+            <button id="client-save" class="client-primary" type="button">GUARDAR CLIENTE</button>
+            <span id="client-status" class="client-status"></span>
+          </footer>
+        </section>
+      </div>
+
+    </section>
+
+    <section id="fiscal-page" class="fiscal-page app-page" hidden>
+      <div class="fiscal-tabs" role="tablist" aria-label="Plantilla fiscal">
+        <button class="fiscal-tab" type="button" role="tab" data-fiscal-tab="fiscal-versions-panel" aria-selected="false">Versiones</button>
+        <button class="fiscal-tab active" type="button" role="tab" data-fiscal-tab="fiscal-buyers-panel" aria-selected="true">Compradores</button>
+        <button class="fiscal-tab" type="button" role="tab" data-fiscal-tab="fiscal-messages-panel" aria-selected="false">Mensajes</button>
+      </div>
+
+      <section id="fiscal-versions-panel" class="fiscal-panel" role="tabpanel" hidden>
+        <div class="fiscal-version-layout">
+          <section class="fiscal-version-form" aria-labelledby="fiscal-version-form-title">
+            <h2 id="fiscal-version-form-title">Nueva version</h2>
+            <p>Llena el formulario y al guardar la version se agrega a la lista historica.</p>
+            <div class="fiscal-version-grid">
+              <label><span>Version</span><input id="fiscal-version-number" type="text" autocomplete="off" /></label>
+              <label><span>Fecha</span><input id="fiscal-version-date" type="date" /></label>
+              <label><span>Tipo de cambio</span><select id="fiscal-version-type"><option>Lanzamiento</option><option>Correccion</option><option>Mejora</option><option>Actualizacion</option></select></label>
+              <label><span>Descripcion</span><input id="fiscal-version-description" type="text" autocomplete="off" /></label>
+              <div class="fiscal-date-row">
+                <label><span>Afecta macros</span><select id="fiscal-version-affects"><option>Si</option><option>No</option></select></label>
+                <label><span>Requiere actualizacion manual</span><select id="fiscal-version-manual"><option>No</option><option>Si</option></select></label>
+              </div>
+            </div>
+            <footer class="fiscal-version-actions">
+              <button id="fiscal-clear-version" class="fiscal-secondary" type="button">Limpiar</button>
+              <button id="fiscal-save-version" class="fiscal-primary" type="button">Guardar version</button>
+              <span id="fiscal-version-status" class="fiscal-status"></span>
+            </footer>
+          </section>
+
+          <section class="fiscal-version-history" aria-labelledby="fiscal-versions-title">
+            <div class="fiscal-table-heading">
+              <h2 id="fiscal-versions-title">Historial de versiones</h2>
+            </div>
+            <div class="fiscal-version-table-wrap">
+              <table class="fiscal-version-table">
+                <thead>
+                  <tr>
+                    <th>Version</th>
+                    <th>Fecha</th>
+                    <th>Tipo de cambio</th>
+                    <th>Descripcion</th>
+                    <th>Afecta macros</th>
+                    <th>Actualizacion manual</th>
+                  </tr>
+                </thead>
+                <tbody id="fiscal-versions-list">
+                  <tr><td colspan="6">Cargando versiones...</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <footer class="fiscal-version-history-actions">
+              <button id="fiscal-copy-version-description" class="fiscal-secondary" type="button">Copiar descripcion</button>
+            </footer>
+          </section>
+        </div>
+      </section>
+
+      <section id="fiscal-buyers-panel" class="fiscal-panel active" role="tabpanel">
+        <div class="fiscal-metrics">
+          <article class="fiscal-metric">
+            <small>VERSIONES</small>
+            <strong id="fiscal-versions-count">0</strong>
+            <span>Activas</span>
+          </article>
+          <article class="fiscal-metric">
+            <small>COMPRADORES</small>
+            <strong id="fiscal-buyers-count">0</strong>
+            <span id="fiscal-buyers-today">+0 hoy</span>
+          </article>
+          <article class="fiscal-metric primary">
+            <small>GANANCIA NETA</small>
+            <strong id="fiscal-net-profit">RD$0.00</strong>
+            <span>Acumulado mensual</span>
+          </article>
+          <article class="fiscal-metric success">
+            <small>GANANCIA BRUTA</small>
+            <strong id="fiscal-gross-profit">RD$0.00</strong>
+            <span>Flujo proyectado</span>
+          </article>
+        </div>
+
+      <div class="fiscal-layout">
+        <section class="fiscal-form-card" aria-labelledby="fiscal-form-title">
+          <h2 id="fiscal-form-title">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M19 8v6M22 11h-6"/></svg>
+            Nuevo comprador
+          </h2>
+          <div class="fiscal-form-grid">
+            <label><span>Nombre</span><input id="fiscal-buyer-name" type="text" autocomplete="off" placeholder="Ej: Soluciones Marmer" /></label>
+            <div class="fiscal-date-row">
+              <label><span>Fecha de compra</span><input id="fiscal-purchase-date" type="date" /></label>
+              <label><span>Vencimiento</span><input id="fiscal-expiration-date" type="date" /></label>
+            </div>
+            <label><span>Correo electronico</span><input id="fiscal-email" type="email" autocomplete="off" placeholder="cliente@ejemplo.com" /></label>
+            <div class="fiscal-date-row">
+              <label><span>Precio de venta</span><input id="fiscal-price" type="number" min="0" step="0.01" placeholder="0.00" /></label>
+              <label><span>Canal</span><select id="fiscal-channel"><option>instagram</option><option>pagina web</option><option>youtube</option><option>desconocido</option></select></label>
+            </div>
+          </div>
+          <footer class="fiscal-form-actions">
+            <button id="fiscal-save-buyer" class="fiscal-primary" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2ZM17 21v-8H7v8M7 3v5h8"/></svg>
+              Guardar comprador
+            </button>
+            <button id="fiscal-new-buyer" class="fiscal-secondary" type="button">Nuevo</button>
+            <span id="fiscal-status" class="fiscal-status"></span>
+          </footer>
+        </section>
+
+        <section class="fiscal-table-card" aria-labelledby="fiscal-table-title">
+          <div class="fiscal-table-heading">
+            <h2 id="fiscal-table-title">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Compradores registrados
+            </h2>
+          </div>
+          <div class="fiscal-table-wrap">
+            <table class="fiscal-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Compra</th>
+                  <th>Vencimiento</th>
+                  <th>Correo electronico</th>
+                  <th>Precio</th>
+                  <th>Canal</th>
+                </tr>
+              </thead>
+              <tbody id="fiscal-buyers-table">
+                <tr><td colspan="6">Cargando compradores...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="fiscal-table-footer">
+            <span id="fiscal-table-count">Mostrando 0 compradores</span>
+          </div>
+        </section>
+      </div>
+      </section>
+
+      <section id="fiscal-messages-panel" class="fiscal-panel" role="tabpanel" hidden>
+      <section class="fiscal-message-card" aria-labelledby="fiscal-message-title">
+        <div class="fiscal-message-header">
+          <div>
+            <h2 id="fiscal-message-title">Mensajes automaticos</h2>
+            <p>Selecciona un comprador o escribe el nombre manualmente. El texto se actualiza al instante.</p>
+          </div>
+          <div class="fiscal-message-pills">
+            <span><small>Mensaje activo</small><b id="fiscal-active-message">Plantilla fiscal</b></span>
+            <span><small>Cliente</small><b id="fiscal-active-client">Sin cliente</b></span>
+          </div>
+        </div>
+
+        <div class="fiscal-message-layout">
+          <section class="fiscal-message-controls">
+            <label><span>Tipo de mensaje</span><select id="fiscal-message-type"><option>Plantilla fiscal</option><option>Actualizacion</option></select></label>
+            <label><span>Comprador guardado</span><select id="fiscal-message-buyer"><option value="">Selecciona un comprador</option></select></label>
+            <label><span>Nombre del cliente</span><input id="fiscal-message-name" type="text" autocomplete="off" placeholder="Escribe el nombre..." /></label>
+            <p>El nombre se coloca automaticamente en el saludo inicial.</p>
+            <button id="fiscal-copy-message" class="fiscal-copy-message" type="button">Copiar mensaje</button>
+            <span id="fiscal-message-status" class="fiscal-status"></span>
+          </section>
+
+          <section class="fiscal-message-preview">
+            <h3>Vista previa</h3>
+            <textarea id="fiscal-message-preview" readonly></textarea>
+          </section>
+        </div>
+      </section>
+      </section>
+    </section>
+
+    <section id="pomodoro-page" class="pomodoro-page app-page" hidden>
+      <div class="pomodoro-shell">
+        <div class="pomodoro-tabs" role="tablist" aria-label="Secciones de Pomodoro">
+          <button class="pomodoro-tab active" type="button" role="tab" data-pomodoro-tab="timer-panel" aria-selected="true">Temporizador</button>
+          <button class="pomodoro-tab" type="button" role="tab" data-pomodoro-tab="tasks-panel" aria-selected="false">Tareas</button>
+          <button class="pomodoro-tab" type="button" role="tab" data-pomodoro-tab="flows-panel" aria-selected="false">Flujos</button>
+          <button class="pomodoro-tab" type="button" role="tab" data-pomodoro-tab="settings-panel" aria-selected="false">Configuración</button>
+        </div>
+
+        <div class="pomodoro-layout">
+          <div class="pomodoro-content">
+            <section id="timer-panel" class="pomodoro-panel active" role="tabpanel">
+              <div class="pomodoro-metrics">
+                <div><span id="metric-minutes">0</span><small>Minutos</small></div>
+                <div><span id="metric-hours">0:00</span><small>Horas</small></div>
+                <div><span id="metric-count">0</span><small>Pomodoros</small></div>
+              </div>
+              <div class="timer-card">
+                <span id="phase-label" class="phase-label">Pomodoro #1</span>
+                <strong id="timer-display" class="timer-display">25:00</strong>
+                <div class="timer-actions">
+                  <button id="timer-toggle" class="timer-primary" type="button">Iniciar</button>
+                  <button id="timer-skip" class="timer-secondary" type="button">Siguiente</button>
+                  <button id="timer-reset" class="timer-danger" type="button">Reiniciar día</button>
+                </div>
+                <div class="active-selection">
+                  <span id="active-selection-label">Sin tarea seleccionada</span>
+                  <small id="active-selection-count">Pomodoros en esta tarea: 0</small>
+                  <div id="active-selection-actions" class="active-selection-actions" hidden>
+                    <button id="active-complete" class="complete-dot" type="button" title="Marcar completada" aria-label="Marcar completada"></button>
+                    <button id="active-clear" class="clear-active" type="button" title="Quitar del Pomodoro" aria-label="Quitar del Pomodoro">−</button>
+                  </div>
+                  <div id="active-flow-zone" class="active-flow-zone" hidden></div>
+                </div>
+              </div>
+            </section>
+
+            <section id="tasks-panel" class="pomodoro-panel" role="tabpanel" hidden>
+              <div class="tasks-card">
+                <span class="step-label">TAREAS</span>
+                <h2>Agregar tareas</h2>
+                <form id="task-form" class="task-form">
+                  <input id="task-title" type="text" maxlength="90" autocomplete="off" placeholder="Escribe una tarea..." />
+                  <button type="submit">Agregar</button>
+                </form>
+                <p id="task-status" class="task-status"></p>
+                <div id="task-list" class="task-list" aria-live="polite"></div>
+              </div>
+            </section>
+            <section id="flows-panel" class="pomodoro-panel" role="tabpanel" hidden>
+              <div class="flows-card">
+                <div id="flow-home-view" class="flow-home-view">
+                  <span class="step-label">FLUJOS</span>
+                  <h2>Flujos</h2>
+                  <button id="flow-create-open" class="flow-create-button" type="button">Crear nuevo flujo</button>
+                  <div id="flow-list" class="flow-list" aria-live="polite"></div>
+                </div>
+                <div id="flow-builder-view" class="flow-builder-view" hidden>
+                  <div class="flow-builder-heading">
+                    <button id="flow-builder-back" class="flow-back-button" type="button">Volver</button>
+                    <div>
+                      <span class="step-label">FLUJO</span>
+                      <h2 id="flow-builder-title">Crear flujo</h2>
+                    </div>
+                  </div>
+                  <form id="flow-form" class="flow-builder-form">
+                    <label><span>Nombre del flujo</span><input id="flow-name" type="text" maxlength="90" autocomplete="off" placeholder="Nombre del flujo..." /></label>
+                    <button type="submit">Guardar flujo</button>
+                  </form>
+                  <div class="flow-selected-heading">
+                    <strong id="flow-selected-count">Tareas del flujo: 0</strong>
+                    <span>Arrastra para cambiar el orden.</span>
+                  </div>
+                  <div id="flow-selected-list" class="flow-selected-list" aria-live="polite"></div>
+                </div>
+                <p id="flow-status" class="task-status"></p>
+              </div>
+            </section>
+            <section id="settings-panel" class="pomodoro-panel" role="tabpanel" hidden>
+              <div class="settings-card">
+                <span class="step-label">CONFIGURACIÓN</span>
+                <h2>Automatización del ciclo</h2>
+                <label class="switch-row"><span><b>Iniciar descansos automáticamente</b><small>Comienza el descanso al terminar una sesión de trabajo.</small></span><input id="auto-break" type="checkbox" /></label>
+                <label class="switch-row"><span><b>Iniciar trabajo automáticamente</b><small>Comienza la próxima sesión cuando termina el descanso.</small></span><input id="auto-work" type="checkbox" /></label>
+                <p id="pomodoro-settings-status" class="settings-status"></p>
+              </div>
+            </section>
+          </div>
+
+          <aside class="pomodoro-sidebar">
+            <div class="sidebar-heading"><span id="pomodoro-sidebar-title">Tareas y flujos</span><small id="pomodoro-sidebar-subtitle">Solo lectura por ahora</small></div>
+            <div id="pomodoro-sidebar-list" class="pomodoro-sidebar-list"><p>Cargando…</p></div>
+          </aside>
+        </div>
+      </div>
+      <div id="pomodoro-flow-task-modal" class="flow-task-modal" hidden>
+        <div class="flow-task-dialog" role="dialog" aria-modal="true" aria-labelledby="pomodoro-flow-task-modal-title">
+          <div class="flow-task-dialog-heading">
+            <h3 id="pomodoro-flow-task-modal-title">Nueva tarea</h3>
+            <button id="pomodoro-flow-task-modal-close" type="button" aria-label="Cerrar">x</button>
+          </div>
+          <form id="pomodoro-flow-task-modal-form" class="flow-task-modal-form">
+            <label><span>Nombre de la tarea</span><input id="pomodoro-flow-task-modal-title-input" type="text" maxlength="90" autocomplete="off" placeholder="Escribe una tarea..." /></label>
+            <button type="submit">Agregar tarea</button>
+          </form>
+          <p id="pomodoro-flow-task-modal-status" class="task-status"></p>
+        </div>
+      </div>
+    </section>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "renombrar-electron",
+  "version": "1.0.0",
+  "description": "Cliente Electron para Renombrar",
+  "main": ".vite/build/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "node scripts/package-electron.cjs",
+    "package:direct": "electron-forge package",
+    "make": "electron-forge make",
+    "test:electron": "node --test electron-tests/*.test.cjs"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.8.1",
+    "@electron-forge/maker-squirrel": "^7.8.1",
+    "@electron-forge/maker-zip": "^7.8.1",
+    "@electron-forge/plugin-vite": "^7.8.1",
+    "electron": "^38.0.0",
+    "vite": "^7.0.0"
+  }
+}
