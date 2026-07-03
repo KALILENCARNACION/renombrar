@@ -1,40 +1,40 @@
 # Renombrar
 
-Aplicación de escritorio con interfaz Tkinter y backend Python reutilizable, preparado para un futuro frontend Electron.
+Aplicación de escritorio Electron con frontend HTML/CSS/JavaScript y backend local Python/FastAPI.
 
-## Instalación
-
-```powershell
-py -m pip install -r requirements.txt
-```
-
-## Aplicación actual
-
-```powershell
-py renombrar.py
-```
-
-## API local
-
-```powershell
-py -m backend.api
-```
-
-La API escucha solamente en `http://127.0.0.1:8765`. Su documentación interactiva queda disponible en `/docs` y todas las operaciones de la aplicación están bajo `/api/v1`.
-
-## Electron
+## Ejecutar en desarrollo
 
 ```powershell
 npm install
 npm start
 ```
 
-Electron inicia FastAPI automáticamente. Si Python no está disponible en PATH, configura `RENOMBRAR_PYTHON` con la ruta absoluta del ejecutable o crea `.venv` dentro del proyecto.
+Electron inicia FastAPI automáticamente en `http://127.0.0.1:8765`.
 
-## Pruebas
+## Empaquetar
 
 ```powershell
-py -m pytest -q
+npm run package
 ```
 
-Las pruebas usan bases SQLite temporales y no modifican `app.db` ni `config.json`.
+El ejecutable queda en:
+
+```text
+out\renombrar-electron-win32-x64\renombrar-electron.exe
+```
+
+## Backend local
+
+Si necesitas iniciar solo la API:
+
+```powershell
+.\.venv\Scripts\python.exe -m backend.api
+```
+
+La API escucha solamente en `http://127.0.0.1:8765`. Su documentación interactiva queda disponible en `/docs` y todas las operaciones están bajo `/api/v1`.
+
+## Datos
+
+El desarrollo usa `app.db` y `config.json` desde la raíz del proyecto.
+
+El empaquetado incluye una copia inicial en `resources\seed-data` y la copia al perfil de usuario de Electron cuando hace falta.

@@ -27,11 +27,8 @@
     "phase": "work",
     "remaining_seconds": 1500,
     "running": false,
-    "phase_end_at": null,
     "ten_minute_alert_played": false,
     "selected_task_id": null,
-    "selected_flow_id": null,
-    "completed_task_ids": [],
-    "flow_pomodoros": {}
+    "selected_flow_id": null
   }
 }
