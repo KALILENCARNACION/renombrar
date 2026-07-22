@@ -1,6 +1,6 @@
 {
   "name": "renombrar-electron",
-  "version": "1.0.4",
+  "version": "1.0.9",
   "description": "Cliente Electron para Renombrar",
   "author": "Kalil Encarnacion",
   "main": ".vite/build/main.js",
