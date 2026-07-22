@@ -6,13 +6,15 @@ module.exports = defineConfig({
   build: { sourcemap: true },
   plugins: [
     {
-      name: 'copy-backend-manager',
+      name: 'copy-runtime-modules',
       generateBundle() {
-        this.emitFile({
-          type: 'asset',
-          fileName: 'backend-manager.cjs',
-          source: fs.readFileSync(path.resolve(__dirname, 'electron/backend-manager.cjs'), 'utf8')
-        });
+        for (const fileName of ['backend-manager.cjs', 'updater.cjs']) {
+          this.emitFile({
+            type: 'asset',
+            fileName,
+            source: fs.readFileSync(path.resolve(__dirname, 'electron', fileName), 'utf8')
+          });
+        }
       }
     }
   ]
