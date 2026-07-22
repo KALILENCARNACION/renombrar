@@ -25,7 +25,7 @@ function createWindow() {
     minWidth: 920,
     minHeight: 620,
     backgroundColor: '#f8f9ff',
-    title: 'Renombrar PDF',
+    title: 'SAA',
     icon: path.join(projectRoot(), 'control_logo.png'),
     show: false,
     webPreferences: {
@@ -114,6 +114,7 @@ async function playSoundInBackground(soundName = 'finalizo') {
 }
 
 function registerIpc() {
+  ipcMain.handle('app:version', () => app.getVersion());
   ipcMain.handle('backend:status', () => backend.check());
   ipcMain.handle('dialog:pdf', async (_event, multiple = true) => {
     const result = await dialog.showOpenDialog(mainWindow, {

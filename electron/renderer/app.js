@@ -1,5 +1,6 @@
 const API = 'http://127.0.0.1:8765/api/v1';
 const desktop = window.desktop || {
+  appVersion: async () => '',
   backendStatus: async () => {
     try {
       const response = await fetch(`${API}/health`);
@@ -20,6 +21,19 @@ const desktop = window.desktop || {
   pomodoroSoundData: async () => '',
   playPomodoroFinishedSound: async () => false
 };
+
+async function showAppVersion() {
+  const versionElement = document.querySelector('#app-version');
+  if (!versionElement) return;
+  try {
+    const version = await desktop.appVersion();
+    if (version) versionElement.textContent = `Versión ${version}`;
+  } catch {
+    // La versión es informativa; no debe bloquear la interfaz si no está disponible.
+  }
+}
+
+showAppVersion();
 
 const elements = {
   statusPill: document.querySelector('#status-pill'),
@@ -310,7 +324,7 @@ function updatePomodoroTaskbarBadge(data) {
     if (pomodoroState.lastBadgeText !== null) {
       desktop.setPomodoroBadge(null).catch(() => {});
       pomodoroState.lastBadgeText = null;
-      document.title = 'Renombrar PDF';
+      document.title = 'SAA';
     }
     return;
   }
@@ -322,7 +336,7 @@ function updatePomodoroTaskbarBadge(data) {
   pomodoroState.lastBadgeText = badgeKey;
   const description = `${phaseKey === 'work' ? 'Pomodoro' : 'Descanso'}: faltan ${text} minuto${text === '1' ? '' : 's'}`;
   desktop.setPomodoroBadge(makePomodoroBadgeDataUrl(text, pomodoroBadgeColors(data)), description).catch(() => {});
-  document.title = `${description} - Renombrar PDF`;
+  document.title = `${description} - SAA`;
 }
 
 async function playPomodoroFinishedSound() {
