@@ -5,7 +5,7 @@ module.exports = {
     asar: true,
     electronVersion: '38.8.6',
     icon: 'control_logo',
-    extraResource: ['backend', 'sonidos', 'requirements.txt', 'seed-data'],
+    extraResource: ['backend', 'sonidos', 'requirements.txt'],
     // La app empaquetada solo necesita los bundles de Vite; backend y sonidos
     // se incorporan explícitamente como recursos adicionales.
     ignore: filePath => {
