@@ -13,5 +13,8 @@ contextBridge.exposeInMainWorld('desktop', {
   chooseDirectory: () => ipcRenderer.invoke('dialog:directory'),
   pathForFile: file => webUtils.getPathForFile(file),
   openPath: targetPath => ipcRenderer.invoke('shell:open-path', targetPath),
-  copyText: text => ipcRenderer.invoke('clipboard:write', text)
+  copyText: text => ipcRenderer.invoke('clipboard:write', text),
+  setPomodoroBadge: (imageDataUrl, description) => ipcRenderer.invoke('pomodoro:badge', imageDataUrl, description),
+  pomodoroSoundData: soundName => ipcRenderer.invoke('pomodoro:sound-data', soundName),
+  playPomodoroFinishedSound: () => ipcRenderer.invoke('pomodoro:play-finished-sound')
 });

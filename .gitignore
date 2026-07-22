@@ -1,8 +1,11 @@
-__pycache__/
-*.py[cod]
-.venv/
-.pytest_cache/
-.test-tmp/
 node_modules/
+.venv/
 .vite/
-out/
+**/__pycache__/
+.pytest_cache/
+*.py[cod]
+electron/renderer/.vite/
+out-fixed/
+out-fixed2/
+out-fixed3/
+seed-data/
