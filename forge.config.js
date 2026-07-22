@@ -3,6 +3,7 @@ const path = require('node:path');
 module.exports = {
   packagerConfig: {
     asar: true,
+    prune: true,
     electronVersion: '38.8.6',
     icon: 'control_logo',
     extraResource: ['backend', 'sonidos', 'requirements.txt'],
@@ -16,7 +17,7 @@ module.exports = {
       const relativePath = path.relative(__dirname, absolutePath);
       if (!relativePath) return false;
       const topLevel = relativePath.split(path.sep)[0];
-      return topLevel !== '.vite' && relativePath !== 'package.json';
+      return !['.vite', 'node_modules'].includes(topLevel) && relativePath !== 'package.json';
     }
   },
   makers: [
