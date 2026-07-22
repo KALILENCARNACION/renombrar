@@ -18,29 +18,6 @@ function projectRoot() {
   return app.isPackaged ? process.resourcesPath : process.cwd();
 }
 
-function seedPackagedData(dataRoot) {
-  if (!app.isPackaged) return;
-  const seedRoot = path.join(process.resourcesPath, 'seed-data');
-  if (!fs.existsSync(seedRoot)) return;
-  fs.mkdirSync(dataRoot, { recursive: true });
-  for (const file of ['app.db', 'config.json']) {
-    const source = path.join(seedRoot, file);
-    const destination = path.join(dataRoot, file);
-    if (!fs.existsSync(source)) continue;
-    if (!fs.existsSync(destination)) {
-      fs.copyFileSync(source, destination);
-      continue;
-    }
-    const sourceSize = fs.statSync(source).size;
-    const destinationSize = fs.statSync(destination).size;
-    if (sourceSize > destinationSize) {
-      const backup = `${destination}.backup-${Date.now()}`;
-      fs.copyFileSync(destination, backup);
-      fs.copyFileSync(source, destination);
-    }
-  }
-}
-
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1180,
@@ -190,7 +167,6 @@ app.whenReady().then(async () => {
   startAutoUpdater({ isPackaged: app.isPackaged, updateElectronApp, logger: console });
   const root = projectRoot();
   const dataRoot = app.isPackaged ? app.getPath('userData') : root;
-  seedPackagedData(dataRoot);
   backend = new BackendManager({
     projectRoot: root,
     env: {
