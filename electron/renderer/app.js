@@ -15,7 +15,10 @@ const desktop = window.desktop || {
   chooseDirectory: async () => null,
   pathForFile: () => '',
   openPath: async () => null,
-  copyText: async text => navigator.clipboard?.writeText(text)
+  copyText: async text => navigator.clipboard?.writeText(text),
+  setPomodoroBadge: async () => false,
+  pomodoroSoundData: async () => '',
+  playPomodoroFinishedSound: async () => false
 };
 
 const elements = {
@@ -123,7 +126,9 @@ const fiscalElements = {
 const pomodoroState = {
   data: null, settings: null, tasks: [], flows: [], interval: null, activeTab: 'timer-panel',
   expandedFlows: new Set(), showCompleted: false, showActiveFlowCompleted: true, timerSidebarMode: 'flows',
-  flowBuilderOpen: false, editingFlowId: null, draftFlowName: '', draftTaskIds: [], draggedDraftTaskId: null
+  flowBuilderOpen: false, editingFlowId: null, draftFlowName: '', draftTaskIds: [], draggedDraftTaskId: null,
+  lastBadgeText: null, lastRenderedPhase: null, lastRenderedCompletedCount: null,
+  soundDataUrl: null, audioContext: null, audioBuffer: null
 };
 const pomodoroElements = {
   page: document.querySelector('#pomodoro-page'),
@@ -256,6 +261,123 @@ function phaseName(data) {
   return `Pomodoro #${(data.completed_count || 0) + 1}`;
 }
 
+function pomodoroDurationSeconds(data) {
+  if (data.phase === 'short_break') return 5 * 60;
+  if (data.phase === 'long_break') return 15 * 60;
+  return 25 * 60;
+}
+
+function pomodoroBadgeText(data) {
+  const duration = pomodoroDurationSeconds(data);
+  const remaining = Math.max(0, Number(data.remaining_seconds) || 0);
+  if (remaining === 0) return '0';
+  return String(Math.min(99, Math.ceil(Math.min(remaining, duration) / 60)));
+}
+
+function pomodoroBadgeColors(data) {
+  if (data.phase === 'short_break' || data.phase === 'long_break') {
+    return { border: '#0f6b3d', fill: '#19c76f' };
+  }
+  return { border: '#8e1f1f', fill: '#f04444' };
+}
+
+function makePomodoroBadgeDataUrl(text, colors) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 32;
+  canvas.height = 32;
+  const context = canvas.getContext('2d');
+  context.clearRect(0, 0, 32, 32);
+
+  context.beginPath();
+  context.arc(16, 16, 15, 0, Math.PI * 2);
+  context.fillStyle = colors.border;
+  context.fill();
+  context.beginPath();
+  context.arc(16, 16, 13, 0, Math.PI * 2);
+  context.fillStyle = colors.fill;
+  context.fill();
+
+  context.fillStyle = '#ffffff';
+  context.font = `800 ${text.length > 1 ? 16 : 20}px Segoe UI, Arial, sans-serif`;
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText(text, 16, 16.5);
+  return canvas.toDataURL('image/png');
+}
+
+function updatePomodoroTaskbarBadge(data) {
+  if (!data?.running) {
+    if (pomodoroState.lastBadgeText !== null) {
+      desktop.setPomodoroBadge(null).catch(() => {});
+      pomodoroState.lastBadgeText = null;
+      document.title = 'Renombrar PDF';
+    }
+    return;
+  }
+
+  const text = pomodoroBadgeText(data);
+  const phaseKey = data.phase === 'work' ? 'work' : 'break';
+  const badgeKey = `${phaseKey}:${text}`;
+  if (badgeKey === pomodoroState.lastBadgeText) return;
+  pomodoroState.lastBadgeText = badgeKey;
+  const description = `${phaseKey === 'work' ? 'Pomodoro' : 'Descanso'}: faltan ${text} minuto${text === '1' ? '' : 's'}`;
+  desktop.setPomodoroBadge(makePomodoroBadgeDataUrl(text, pomodoroBadgeColors(data)), description).catch(() => {});
+  document.title = `${description} - Renombrar PDF`;
+}
+
+async function playPomodoroFinishedSound() {
+  if (desktop.playPomodoroFinishedSound) {
+    try {
+      const played = await desktop.playPomodoroFinishedSound();
+      if (played) return;
+    } catch {}
+  }
+  try {
+    if (!pomodoroState.soundDataUrl) {
+      pomodoroState.soundDataUrl = await desktop.pomodoroSoundData('finalizo');
+    }
+    if (!pomodoroState.soundDataUrl) throw new Error('Sin sonido finalizo.');
+    if (!pomodoroState.audioContext) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      pomodoroState.audioContext = new AudioContextClass();
+    }
+    if (pomodoroState.audioContext.state === 'suspended') {
+      await pomodoroState.audioContext.resume();
+    }
+    if (!pomodoroState.audioBuffer) {
+      const response = await fetch(pomodoroState.soundDataUrl);
+      const arrayBuffer = await response.arrayBuffer();
+      pomodoroState.audioBuffer = await pomodoroState.audioContext.decodeAudioData(arrayBuffer);
+    }
+    const source = pomodoroState.audioContext.createBufferSource();
+    const gain = pomodoroState.audioContext.createGain();
+    source.buffer = pomodoroState.audioBuffer;
+    gain.gain.value = 3.2;
+    source.connect(gain);
+    gain.connect(pomodoroState.audioContext.destination);
+    source.start(0);
+  } catch {
+    const audio = new Audio(pomodoroState.soundDataUrl || '');
+    audio.volume = 1;
+    audio.play().catch(() => {});
+  }
+}
+
+function maybePlayPomodoroFinishedSound(data) {
+  const previousPhase = pomodoroState.lastRenderedPhase;
+  const previousCompleted = pomodoroState.lastRenderedCompletedCount;
+  const completedCount = Number(data.completed_count) || 0;
+  const finishedWork =
+    previousPhase === 'work' &&
+    data.phase !== 'work' &&
+    previousCompleted !== null &&
+    completedCount >= previousCompleted;
+
+  pomodoroState.lastRenderedPhase = data.phase;
+  pomodoroState.lastRenderedCompletedCount = completedCount;
+  if (finishedWork) playPomodoroFinishedSound();
+}
+
 function isTaskCompleted(taskId) {
   return (pomodoroState.data?.completed_task_ids || []).includes(taskId);
 }
@@ -294,6 +416,8 @@ function renderPomodoro() {
   pomodoroElements.selectionActions.hidden = !selectedTask && !selectedFlow;
   pomodoroElements.activeComplete.hidden = !selectedTask;
   pomodoroElements.timerCard.classList.toggle('has-flow', Boolean(selectedFlow));
+  updatePomodoroTaskbarBadge(data);
+  maybePlayPomodoroFinishedSound(data);
   renderActiveFlow(selectedFlow);
 }
 
@@ -548,6 +672,11 @@ async function loadPomodoro() {
   renderTimerPicker();
 }
 
+async function initializePomodoroRefresh() {
+  await loadPomodoro();
+  startPomodoroRefresh();
+}
+
 async function sendPomodoroCommand(action) {
   pomodoroState.data = await api('/pomodoro/commands', { method: 'POST', body: JSON.stringify({ action }) });
   renderPomodoro();
@@ -737,8 +866,26 @@ async function savePomodoroSettings() {
 function startPomodoroRefresh() {
   if (pomodoroState.interval) return;
   pomodoroState.interval = setInterval(async () => {
-    if (pomodoroElements.page.hidden) return;
-    try { pomodoroState.data = await api('/pomodoro/state'); renderPomodoro(); } catch {}
+    try {
+      const previousPhase = pomodoroState.data?.phase;
+      const previousCompletedCount = Number(pomodoroState.data?.completed_count) || 0;
+      pomodoroState.data = await api('/pomodoro/state');
+      const completedWork =
+        previousPhase === 'work' &&
+        pomodoroState.data.phase !== 'work' &&
+        Number(pomodoroState.data.completed_count || 0) > previousCompletedCount;
+      if (completedWork) {
+        pomodoroState.tasks = await api('/pomodoro/tasks');
+        pomodoroState.flows = await api('/pomodoro/flows');
+      }
+      renderPomodoro();
+      if (!pomodoroElements.page.hidden) {
+        renderTaskList();
+        renderFlowList();
+        renderTimerPicker();
+        renderPomodoroSidebar();
+      }
+    } catch {}
   }, 1000);
 }
 
@@ -1701,6 +1848,7 @@ desktop.onBackendChanged(status => {
   renderBackendStatus(status);
   if (status.state === 'connected') {
     loadSettings().catch(error => showNotice(error.message, 'error'));
+    initializePomodoroRefresh().catch(() => {});
     if (!clientElements.page.hidden) loadClients().catch(error => { clientElements.status.textContent = error.message; });
     if (!proposalElements.page.hidden) loadProposal().catch(error => { proposalElements.status.textContent = error.message; });
     if (!fiscalElements.page.hidden) loadFiscal().catch(error => { fiscalElements.status.textContent = error.message; });
@@ -1709,5 +1857,8 @@ desktop.onBackendChanged(status => {
 });
 readBackendStatus().then(async status => {
   renderBackendStatus(status);
-  if (status.state === 'connected') await loadSettings();
+  if (status.state === 'connected') {
+    await loadSettings();
+    initializePomodoroRefresh().catch(() => {});
+  }
 }).catch(error => { renderBackendStatus({ state: 'error', message: error.message }); showNotice(error.message, 'error'); });

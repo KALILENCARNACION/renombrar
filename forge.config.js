@@ -1,20 +1,19 @@
+const path = require('node:path');
+
 module.exports = {
   packagerConfig: {
     asar: true,
     electronVersion: '38.8.6',
     icon: 'control_logo',
     extraResource: ['backend', 'sonidos', 'requirements.txt', 'seed-data'],
-    ignore: [
-      /(^|[\\/])\.git([\\/]|$)/,
-      /(^|[\\/])\.pytest_cache([\\/]|$)/,
-      /(^|[\\/])__pycache__([\\/]|$)/,
-      /(^|[\\/])backups([\\/]|$)/,
-      /(^|[\\/])tests([\\/]|$)/,
-      /(^|[\\/])electron-tests([\\/]|$)/,
-      /(^|[\\/])app\.db$/,
-      /(^|[\\/])config\.json$/,
-      /(^|[\\/])renombrar\.py$/
-    ]
+    // La app empaquetada solo necesita los bundles de Vite; backend y sonidos
+    // se incorporan explícitamente como recursos adicionales.
+    ignore: filePath => {
+      const relativePath = path.relative(__dirname, filePath);
+      if (!relativePath) return false;
+      const topLevel = relativePath.split(path.sep)[0];
+      return topLevel !== '.vite' && relativePath !== 'package.json';
+    }
   },
   makers: [
     { name: '@electron-forge/maker-squirrel', config: { name: 'Renombrar' } },

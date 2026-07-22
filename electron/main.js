@@ -1,10 +1,13 @@
-const { app, BrowserWindow, clipboard, dialog, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, clipboard, dialog, ipcMain, nativeImage, shell } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { BackendManager } = require('./backend-manager.cjs');
 
 let mainWindow;
 let backend;
+const soundWindows = new Set();
+
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
 function projectRoot() {
   return app.isPackaged ? process.resourcesPath : process.cwd();
@@ -47,7 +50,8 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true
+      sandbox: true,
+      backgroundThrottling: false
     }
   });
 
@@ -78,6 +82,55 @@ function createWindow() {
   }
 }
 
+function findSoundPath(soundName = 'finalizo') {
+  const safeName = String(soundName).replace(/[^a-zA-Z0-9 _-]/g, '').trim() || 'finalizo';
+  for (const extension of ['.mp3', '.wav', '.m4a', '.wma']) {
+    const soundPath = path.join(projectRoot(), 'sonidos', `${safeName}${extension}`);
+    if (fs.existsSync(soundPath)) return { soundPath, extension };
+  }
+  return null;
+}
+
+function soundMimeType(extension) {
+  if (extension === '.wav') return 'audio/wav';
+  if (extension === '.m4a') return 'audio/mp4';
+  return 'audio/mpeg';
+}
+
+function soundDataUrl(soundName = 'finalizo') {
+  const found = findSoundPath(soundName);
+  if (!found) return '';
+  return `data:${soundMimeType(found.extension)};base64,${fs.readFileSync(found.soundPath).toString('base64')}`;
+}
+
+async function playSoundInBackground(soundName = 'finalizo') {
+  const source = soundDataUrl(soundName);
+  if (!source) return false;
+  const soundWindow = new BrowserWindow({
+    width: 1,
+    height: 1,
+    show: false,
+    skipTaskbar: true,
+    webPreferences: {
+      backgroundThrottling: false,
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true
+    }
+  });
+  soundWindows.add(soundWindow);
+  soundWindow.on('closed', () => soundWindows.delete(soundWindow));
+  const html = `<!doctype html><meta charset="utf-8"><audio id="sound" src="${source}" autoplay></audio><script>
+    const sound = document.getElementById('sound');
+    sound.volume = 1;
+    sound.play().catch(() => {});
+    sound.addEventListener('ended', () => window.close());
+    setTimeout(() => window.close(), 15000);
+  </script>`;
+  await soundWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+  return true;
+}
+
 function registerIpc() {
   ipcMain.handle('backend:status', () => backend.check());
   ipcMain.handle('dialog:pdf', async (_event, multiple = true) => {
@@ -106,9 +159,29 @@ function registerIpc() {
     clipboard.writeText(text);
     return true;
   });
+  ipcMain.handle('pomodoro:badge', (_event, imageDataUrl, description = '') => {
+    if (!mainWindow || mainWindow.isDestroyed()) return false;
+    if (!imageDataUrl) {
+      mainWindow.setOverlayIcon(null, '');
+      return true;
+    }
+    if (typeof imageDataUrl !== 'string' || !imageDataUrl.startsWith('data:image/png;base64,')) {
+      throw new Error('Badge invalido.');
+    }
+    const image = nativeImage.createFromDataURL(imageDataUrl);
+    mainWindow.setOverlayIcon(image, String(description || 'Pomodoro'));
+    return true;
+  });
+  ipcMain.handle('pomodoro:sound-data', (_event, soundName = 'finalizo') => {
+    return soundDataUrl(soundName);
+  });
+  ipcMain.handle('pomodoro:play-finished-sound', () => {
+    return playSoundInBackground('finalizo');
+  });
 }
 
 app.whenReady().then(async () => {
+  if (process.platform === 'win32') app.setAppUserModelId('com.renombrar.pdf');
   const root = projectRoot();
   const dataRoot = app.isPackaged ? app.getPath('userData') : root;
   seedPackagedData(dataRoot);

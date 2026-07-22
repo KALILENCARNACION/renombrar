@@ -22,12 +22,12 @@
     "auto_start_work": false
   },
   "pomodoro_state": {
-    "date": "2026-07-03",
+    "date": "2026-07-20",
     "completed_count": 0,
     "phase": "work",
-    "remaining_seconds": 1500,
-    "running": false,
-    "phase_end_at": null,
+    "remaining_seconds": 1495,
+    "running": true,
+    "phase_end_at": "2026-07-20T15:42:00.292802",
     "ten_minute_alert_played": false,
     "selected_task_id": null,
     "selected_flow_id": null,
