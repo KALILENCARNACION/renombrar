@@ -2,6 +2,11 @@ const { app, BrowserWindow, clipboard, dialog, ipcMain, nativeImage, shell } = r
 const fs = require('node:fs');
 const path = require('node:path');
 const { BackendManager } = require('./backend-manager.cjs');
+const { updateElectronApp } = require('update-electron-app');
+const { startAutoUpdater } = require('./updater.cjs');
+
+// Squirrel ejecuta la aplicaciÃ³n durante las operaciones de instalar, actualizar y desinstalar.
+if (require('electron-squirrel-startup')) app.quit();
 
 let mainWindow;
 let backend;
@@ -182,6 +187,7 @@ function registerIpc() {
 
 app.whenReady().then(async () => {
   if (process.platform === 'win32') app.setAppUserModelId('com.renombrar.pdf');
+  startAutoUpdater({ isPackaged: app.isPackaged, updateElectronApp, logger: console });
   const root = projectRoot();
   const dataRoot = app.isPackaged ? app.getPath('userData') : root;
   seedPackagedData(dataRoot);

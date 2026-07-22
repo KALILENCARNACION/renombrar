@@ -9,15 +9,37 @@ module.exports = {
     // La app empaquetada solo necesita los bundles de Vite; backend y sonidos
     // se incorporan explícitamente como recursos adicionales.
     ignore: filePath => {
-      const relativePath = path.relative(__dirname, filePath);
+      const value = String(filePath);
+      const absolutePath = /^[\\/]+/.test(value)
+        ? path.resolve(__dirname, value.replace(/^[\\/]+/, ''))
+        : path.resolve(value);
+      const relativePath = path.relative(__dirname, absolutePath);
       if (!relativePath) return false;
       const topLevel = relativePath.split(path.sep)[0];
       return topLevel !== '.vite' && relativePath !== 'package.json';
     }
   },
   makers: [
-    { name: '@electron-forge/maker-squirrel', config: { name: 'Renombrar' } },
+    {
+      name: '@electron-forge/maker-squirrel',
+      config: {
+        name: 'Renombrar',
+        authors: 'Kalil Encarnacion',
+        description: 'Renombrar PDF'
+      }
+    },
     { name: '@electron-forge/maker-zip', platforms: ['win32'] }
+  ],
+  publishers: [
+    {
+      name: '@electron-forge/publisher-github',
+      config: {
+        repository: { owner: 'KALILENCARNACION', name: 'renombrar' },
+        draft: false,
+        prerelease: false,
+        generateReleaseNotes: true
+      }
+    }
   ],
   plugins: [
     {

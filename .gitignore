@@ -3,9 +3,11 @@ node_modules/
 .vite/
 **/__pycache__/
 .pytest_cache/
+.test-tmp/
 *.py[cod]
 electron/renderer/.vite/
 out-fixed/
 out-fixed2/
 out-fixed3/
+out/
 seed-data/
