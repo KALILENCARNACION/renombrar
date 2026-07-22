@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('desktop', {
   platform: process.platform,
+  appVersion: () => ipcRenderer.invoke('app:version'),
   backendStatus: () => ipcRenderer.invoke('backend:status'),
   onBackendChanged: callback => {
     const listener = (_event, status) => callback(status);
