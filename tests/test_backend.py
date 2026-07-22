@@ -48,7 +48,12 @@ def test_fiscal_records_summary_and_message(tmp_path):
     services.fiscal.save_version({"version": "1.0", "change_date": "2026-06-20", "change_type": "Lanzamiento"})
     buyer = services.fiscal.save_buyer({"name": "Ana", "purchase_date": "2026-06-20", "price": 3000})
     assert buyer["price"] == 3000
-    assert services.fiscal.summary() == {"versions": 1, "buyers": 1, "gross_profit": 3000.0, "net_profit": 3000.0}
+    assert services.fiscal.summary() == {
+        "versions": 1,
+        "buyers": 1,
+        "gross_profit": 3000.0,
+        "net_profit": 3000.0 / 1.18,
+    }
     assert "Hola Ana" in services.fiscal.message("Ana", "Plantilla fiscal")
 
 

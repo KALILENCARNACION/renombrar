@@ -1,20 +1,30 @@
 {
   "name": "renombrar-electron",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Cliente Electron para Renombrar",
+  "author": "Kalil Encarnacion",
   "main": ".vite/build/main.js",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KALILENCARNACION/renombrar.git"
+  },
   "scripts": {
     "start": "electron-forge start",
-    "package": "node scripts/package-electron.cjs",
-    "package:direct": "electron-forge package",
-    "make": "electron-forge make",
+    "package": "electron-forge package --platform=win32 --arch=x64",
+    "make": "electron-forge make --platform=win32 --arch=x64",
+    "publish": "electron-forge publish --platform=win32 --arch=x64",
     "test:electron": "node --test electron-tests/*.test.cjs"
+  },
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.1",
+    "update-electron-app": "^3.0.0"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.8.1",
     "@electron-forge/maker-squirrel": "^7.8.1",
     "@electron-forge/maker-zip": "^7.8.1",
+    "@electron-forge/publisher-github": "^7.8.1",
     "@electron-forge/plugin-vite": "^7.8.1",
     "electron": "^38.0.0",
     "vite": "^7.0.0"

@@ -1,0 +1,52 @@
+name: Publicar aplicacion Windows
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Obtener codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependencias de Node.js
+        run: npm ci
+
+      - name: Instalar dependencias de Python
+        run: python -m pip install -r requirements.txt
+
+      - name: Verificar que la etiqueta coincide con la version
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          if ("v$version" -ne "${{ github.ref_name }}") {
+            throw "La etiqueta ${{ github.ref_name }} no coincide con la version $version de package.json."
+          }
+
+      - name: Ejecutar pruebas
+        run: |
+          npm run test:electron
+          python -m pytest -q
+
+      - name: Empaquetar y publicar Release
+        run: npm run publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
