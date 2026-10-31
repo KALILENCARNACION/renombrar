@@ -54,6 +54,19 @@ const elements = {
 };
 
 const state = { settings: null, files: [], analysis: [], processing: false };
+let analysisRevision = 0;
+const destinationCard = document.querySelector('#header-destination');
+document.querySelector('.app-bar').append(destinationCard);
+const quickClients = {
+  root: document.querySelector('#quick-clients'),
+  panel: document.querySelector('#quick-client-panel'),
+  toggle: document.querySelector('#quick-client-toggle'),
+  search: document.querySelector('#quick-client-search'),
+  results: document.querySelector('#quick-client-results'),
+  detail: document.querySelector('#quick-client-detail'),
+  status: document.querySelector('#quick-client-status'),
+  revision: 0, selectedId: null, browsing: false
+};
 const proposalState = { source: '', preview: '', creating: false, loaded: false };
 const clientsState = { items: [], selectedId: null, loaded: false };
 const fiscalState = { buyers: [], versions: [], summary: null, selectedId: null, selectedVersionId: null, loaded: false, messageBuyerId: '' };
@@ -216,6 +229,8 @@ function bindPageNavigation() {
   document.querySelectorAll('[data-page]').forEach(button => {
     button.addEventListener('click', async () => {
       const target = button.dataset.page;
+      quickClients.root.hidden = target === 'clients-page';
+      closeDestination();
       document.querySelectorAll('.app-page').forEach(page => { page.hidden = page.id !== target; });
       document.querySelectorAll('[data-page]').forEach(item => item.classList.toggle('active', item === button));
       if (target === 'pomodoro-page') {
@@ -920,6 +935,137 @@ function emptyClient() {
   return { id: null, name: '', rnc: '', pc_location: '', cedula: '', tss_class: '', resource_path: '', work_description: '' };
 }
 
+async function openLocalPath(path) {
+  if (!path) throw new Error('No hay una ruta guardada.');
+  const error = await desktop.openPath(path);
+  if (error) throw new Error(error);
+}
+
+function closeDestination() {
+  destinationCard.hidden = true;
+  document.querySelector('#change-invoice-route').setAttribute('aria-expanded', 'false');
+}
+
+function toggleDestination() {
+  destinationCard.hidden = !destinationCard.hidden;
+  document.querySelector('#change-invoice-route').setAttribute('aria-expanded', String(!destinationCard.hidden));
+  elements.destinationPanel.hidden = false;
+  elements.destinationToggle.setAttribute('aria-expanded', 'true');
+}
+
+document.querySelector('#invoice-routes').addEventListener('click', async () => {
+  try {
+    if (!state.settings) await loadSettings();
+    const folder = state.settings.selected_output_folder;
+    if (folder) { closeDestination(); await openLocalPath(folder); }
+    else toggleDestination();
+  } catch (error) { window.alert(error.message); }
+});
+document.querySelector('#change-invoice-route').addEventListener('click', toggleDestination);
+document.addEventListener('click', event => {
+  if (!destinationCard.contains(event.target) && !event.target.closest('#invoice-routes, #change-invoice-route')) closeDestination();
+});
+document.querySelector('#kalil-folder').addEventListener('click', async event => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  try {
+    const clients = await api('/clients?search=kalil');
+    const client = clients.find(item => {
+      const name = item.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      return name.includes('kalil') && name.includes('encarnacion');
+    });
+    if (!client) throw new Error('Guarda a Kalil Encarnación en Clientes para vincular su carpeta.');
+    let folder = client.pc_location;
+    if (!folder) {
+      folder = await desktop.chooseDirectory();
+      if (!folder) return;
+      await api(`/clients/${encodeURIComponent(client.id)}`, { method: 'PUT', body: JSON.stringify({ ...client, pc_location: folder }) });
+    }
+    await openLocalPath(folder);
+    button.title = `Abrir carpeta de ${client.name}: ${folder}`;
+  } catch (error) { window.alert(error.message); }
+  finally { button.disabled = false; }
+});
+
+function closeQuickClients() {
+  quickClients.panel.hidden = true;
+  quickClients.toggle.setAttribute('aria-expanded', 'false');
+  quickClients.toggle.focus();
+}
+
+async function searchQuickClients() {
+  const revision = ++quickClients.revision;
+  quickClients.status.textContent = 'Buscando clientes…';
+  quickClients.results.innerHTML = '';
+  quickClients.results.hidden = false;
+  try {
+    const clients = await api(`/clients?search=${encodeURIComponent(quickClients.search.value.trim())}`);
+    if (revision !== quickClients.revision) return;
+    quickClients.status.textContent = quickClients.selectedId && !quickClients.browsing ? 'Cliente cargado.' : clients.length ? `${clients.length} cliente${clients.length === 1 ? '' : 's'}` : 'No se encontraron clientes.';
+    quickClients.results.innerHTML = clients.map(client => `<button type="button" class="client-list-item" data-quick-client="${escapeHtml(client.id)}"><span class="client-avatar">${escapeHtml(clientInitials(client.name))}</span><span><strong>${escapeHtml(client.name)}</strong><span>${escapeHtml(client.rnc || client.cedula || 'Sin identificación')}</span></span></button>`).join('');
+  } catch (error) { if (revision === quickClients.revision) quickClients.status.textContent = error.message; }
+}
+
+quickClients.toggle.addEventListener('click', () => {
+  if (!quickClients.panel.hidden) return closeQuickClients();
+  quickClients.panel.hidden = false;
+  quickClients.toggle.setAttribute('aria-expanded', 'true');
+  if (!quickClients.selectedId) quickClients.search.focus();
+});
+document.querySelector('#quick-client-close').addEventListener('click', closeQuickClients);
+quickClients.search.addEventListener('input', searchQuickClients);
+quickClients.search.addEventListener('focus', () => {
+  quickClients.browsing = true;
+  searchQuickClients();
+});
+function collapseQuickClientResults(target) {
+  if (target === quickClients.search || quickClients.results.contains(target)) return;
+  if (quickClients.selectedId && quickClients.browsing) quickClients.status.textContent = 'Cliente cargado.';
+  quickClients.browsing = false;
+  if (quickClients.selectedId) quickClients.results.hidden = true;
+}
+document.addEventListener('focusin', event => collapseQuickClientResults(event.target));
+document.addEventListener('pointerdown', event => collapseQuickClientResults(event.target));
+quickClients.results.addEventListener('focusout', event => collapseQuickClientResults(event.relatedTarget));
+quickClients.search.addEventListener('blur', event => collapseQuickClientResults(event.relatedTarget));
+quickClients.results.addEventListener('click', async event => {
+  const button = event.target.closest('[data-quick-client]');
+  if (!button) return;
+  const revision = ++quickClients.revision;
+  quickClients.detail.hidden = true;
+  quickClients.status.textContent = 'Cargando cliente…';
+  try {
+    const client = await api(`/clients/${encodeURIComponent(button.dataset.quickClient)}`);
+    if (revision !== quickClients.revision) return;
+    const fields = [['RNC', client.rnc], ['Cédula', client.cedula], ['Clave TSS', client.tss_class]];
+    quickClients.detail.innerHTML = `<h3>${escapeHtml(client.name)}</h3>${fields.map(([label, value]) => `<div class="quick-client-field"><span><small>${label}</small><strong>${label === 'Clave TSS' && value ? '••••••••' : escapeHtml(value || 'Sin guardar')}</strong></span><button type="button" class="text-button" data-quick-copy="${escapeHtml(value || '')}" ${value ? '' : 'disabled'}>Copiar</button></div>`).join('')}
+      <p>${escapeHtml(client.work_description || 'Sin descripción guardada.')}</p>
+      <div class="quick-client-path"><small>Carpeta del cliente</small><span>${escapeHtml(client.pc_location || 'Sin carpeta guardada')}</span>${client.pc_location ? `<button type="button" class="outline-button" data-quick-open="${escapeHtml(client.pc_location)}">Abrir carpeta</button>` : ''}</div>
+      <div class="quick-client-path"><small>Recurso guardado</small><span>${escapeHtml(client.resource_path || 'Sin recurso guardado')}</span>${client.resource_path ? `<button type="button" class="outline-button" data-quick-open="${escapeHtml(client.resource_path)}">Abrir recurso</button>` : ''}</div>`;
+    quickClients.detail.hidden = false;
+    quickClients.selectedId = client.id;
+    quickClients.browsing = false;
+    quickClients.results.hidden = true;
+    quickClients.status.textContent = 'Cliente cargado.';
+  } catch (error) { if (revision === quickClients.revision) quickClients.status.textContent = error.message; }
+});
+quickClients.detail.addEventListener('click', async event => {
+  const button = event.target.closest('button');
+  if (!button) return;
+  try {
+    if (button.dataset.quickCopy) {
+      await desktop.copyText(button.dataset.quickCopy);
+      quickClients.status.textContent = 'Copiado en el portapapeles.';
+    }
+    if (button.dataset.quickOpen) await openLocalPath(button.dataset.quickOpen);
+  } catch (error) { quickClients.status.textContent = error.message; }
+});
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape') return;
+  if (!destinationCard.hidden) { closeDestination(); document.querySelector('#invoice-routes').focus(); }
+  if (!quickClients.panel.hidden) closeQuickClients();
+});
+
 function clientInitials(name) {
   return String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]?.toUpperCase()).join('') || '?';
 }
@@ -1354,6 +1500,9 @@ function renderSettings() {
     ? routes.map(route => `<div class="route-item" title="${escapeHtml(route.folder || '')}"><b>${escapeHtml(route.company)}</b><span>Automática</span></div>`).join('')
     : '<div class="empty-routes">No hay rutas automáticas configuradas.</div>';
   const selected = elements.destinationSelect.value;
+  const invoiceButton = document.querySelector('#invoice-routes');
+  invoiceButton.title = settings.selected_output_folder ? `Abrir facturas: ${settings.selected_output_folder}` : 'Seleccionar ruta de facturas';
+  document.querySelector('#change-invoice-route').hidden = !settings.selected_output_folder;
   elements.destinationSummary.textContent = selected
     ? `${routes.length} ruta${routes.length === 1 ? '' : 's'} automática${routes.length === 1 ? '' : 's'} · ${fileName(selected)}`
     : `${routes.length} rutas automáticas · Elige una carpeta general`;
@@ -1389,12 +1538,28 @@ function fileCard(path) {
 }
 
 function renderFiles() {
+  const hasFiles = state.files.length > 0;
+  elements.dropZone.hidden = hasFiles;
+  elements.processButton.hidden = !hasFiles;
+  document.querySelector('#add-more-files').hidden = !hasFiles;
+  document.querySelector('#add-more-files').disabled = state.processing;
+  elements.clearButton.disabled = state.processing;
+  elements.destinationSelect.disabled = state.processing;
+  elements.addDestination.disabled = state.processing;
+  elements.fileList.setAttribute('aria-busy', String(state.processing));
   elements.filesSection.hidden = state.files.length === 0;
   elements.fileList.innerHTML = state.files.map(fileCard).join('');
   const ready = state.analysis.filter(item => item.status === 'ready').length;
   elements.processButton.disabled = state.processing || ready === 0;
   elements.processButton.classList.toggle('loading', state.processing);
   elements.processButton.querySelector('span').textContent = state.processing ? 'Procesando…' : ready ? `Procesar ${ready} PDF${ready === 1 ? '' : 's'}` : 'Procesar';
+  elements.fileList.querySelectorAll('[data-remove-path]').forEach(button => { button.disabled = state.processing; });
+  const folders = [...new Set(state.analysis.filter(item => item.status === 'completed').map(item => folderName(item.target) || item.destination).filter(Boolean))];
+  const folderActions = document.querySelector('#processed-folders');
+  folderActions.hidden = !folders.length;
+  folderActions.innerHTML = folders.map(folder => `<button class="outline-button" type="button" data-open-folder="${escapeHtml(folder)}" title="${escapeHtml(folder)}">Abrir carpeta: ${escapeHtml(fileName(folder))}</button>`).join('');
+  document.querySelector('#page-title').textContent = !hasFiles ? '¿Qué PDF procesamos hoy?' : folders.length && !ready ? 'Resultado del procesamiento' : 'Revisa y procesa tus facturas';
+  document.querySelector('.intro p').textContent = !hasFiles ? 'Suelta tus facturas aquí para analizarlas y renombrarlas automáticamente.' : 'Puedes subir más PDF antes de procesar y abrir sus carpetas al terminar.';
 }
 
 async function loadSettings() {
@@ -1405,10 +1570,12 @@ async function loadSettings() {
 async function saveSettings(changes) {
   state.settings = await api('/renamer/settings', { method: 'PUT', body: JSON.stringify(changes) });
   renderSettings();
+  if (changes.selected_output_folder) closeDestination();
   if (state.files.length) await analyzeFiles();
 }
 
 async function addFiles(paths) {
+  if (state.processing || !paths.length) return;
   const uniquePdfPaths = [...new Set(paths.filter(path => path && path.toLowerCase().endsWith('.pdf')))];
   state.files = [...new Set([...state.files, ...uniquePdfPaths])];
   showNotice(uniquePdfPaths.length ? '' : 'Solo puedes agregar archivos PDF.', uniquePdfPaths.length ? '' : 'error');
@@ -1418,26 +1585,33 @@ async function addFiles(paths) {
 
 async function analyzeFiles() {
   if (!state.files.length || !state.settings) return;
-  state.analysis = [];
+  const revision = ++analysisRevision;
+  const completed = state.analysis.filter(item => item.status === 'completed');
+  const paths = state.files.filter(path => !completed.some(item => item.source === path));
+  state.analysis = completed;
   renderFiles();
   try {
-    state.analysis = await api('/renamer/analyze', {
+    const analyzed = await api('/renamer/analyze', {
       method: 'POST',
       body: JSON.stringify({
-        paths: state.files,
+        paths,
         routes: state.settings.company_route_mappings || [],
         default_folder: state.settings.selected_output_folder || ''
       })
     });
+    if (revision !== analysisRevision) return;
+    state.analysis = [...completed, ...analyzed.filter(item => state.files.includes(item.source))];
     const errors = state.analysis.filter(item => item.status === 'error').length;
     showNotice(errors ? `${errors} archivo${errors === 1 ? '' : 's'} necesita${errors === 1 ? '' : 'n'} revisión antes de procesar.` : '', errors ? 'error' : '');
   } catch (error) {
+    if (revision !== analysisRevision) return;
     showNotice(error.message, 'error');
   }
   renderFiles();
 }
 
 async function processFiles() {
+  if (state.processing) return;
   const readyItems = state.analysis.filter(item => item.status === 'ready');
   if (!readyItems.length) return;
   state.processing = true;
@@ -1473,7 +1647,15 @@ elements.addDestination.addEventListener('click', async () => {
   const folders = [...new Set([...(state.settings.saved_folders || []), folder])];
   await saveSettings({ saved_folders: folders, selected_output_folder: folder });
 });
-elements.dropZone.addEventListener('click', async () => addFiles(await desktop.choosePdf(true)));
+async function chooseInvoices() {
+  try { await addFiles(await desktop.choosePdf(true)); } catch (error) { showNotice(error.message, 'error'); }
+}
+elements.dropZone.addEventListener('click', chooseInvoices);
+document.querySelector('#add-more-files').addEventListener('click', chooseInvoices);
+document.querySelector('#processed-folders').addEventListener('click', event => {
+  const button = event.target.closest('[data-open-folder]');
+  if (button) openLocalPath(button.dataset.openFolder).catch(error => showNotice(error.message, 'error'));
+});
 for (const eventName of ['dragenter', 'dragover']) {
   elements.dropZone.addEventListener(eventName, event => { event.preventDefault(); elements.dropZone.classList.add('dragging'); });
 }
@@ -1485,10 +1667,10 @@ elements.dropZone.addEventListener('drop', event => {
   addFiles(paths);
 });
 elements.processButton.addEventListener('click', processFiles);
-elements.clearButton.addEventListener('click', () => { state.files = []; state.analysis = []; showNotice(''); renderFiles(); });
+elements.clearButton.addEventListener('click', () => { if (state.processing) return; analysisRevision++; state.files = []; state.analysis = []; showNotice(''); renderFiles(); });
 elements.fileList.addEventListener('click', event => {
   const button = event.target.closest('[data-remove-path]');
-  if (!button) return;
+  if (!button || state.processing) return;
   const path = button.dataset.removePath;
   state.files = state.files.filter(item => item !== path);
   state.analysis = state.analysis.filter(item => item.source !== path);

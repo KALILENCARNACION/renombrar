@@ -22,6 +22,17 @@
         <button id="nav-fiscal" class="nav-item" type="button" data-page="fiscal-page">Plantilla fiscal</button>
         <button id="nav-pomodoro" class="nav-item" type="button" data-page="pomodoro-page">Pomodoro</button>
       </nav>
+      <div class="header-shortcuts">
+        <button id="kalil-folder" class="header-shortcut" type="button" title="Abrir carpeta de Kalil Encarnación" aria-label="Abrir carpeta de Kalil Encarnación">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h6l2 2h10v11H3zM8 7V4h8v5M8 14h8"/></svg><span>Kalil</span>
+        </button>
+        <button id="invoice-routes" class="header-shortcut" type="button" title="Seleccionar ruta de facturas">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h6l2 2h10v11H3zM12 12v5M9.5 14.5h5"/></svg><span>Facturas</span>
+        </button>
+        <button id="change-invoice-route" class="header-shortcut" type="button" aria-expanded="false" aria-controls="header-destination" title="Cambiar ruta de facturas" aria-label="Cambiar ruta de facturas" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5-12 12H4v-5zM13 6l5 5"/></svg>
+        </button>
+      </div>
       <div id="status-pill" class="status-pill pending" role="status">
         <span class="status-dot"></span><span id="status-text">Conectando…</span>
       </div>
@@ -29,7 +40,7 @@
 
     <main>
     <section id="rename-page" class="page-shell app-page">
-      <section class="destination-card">
+      <section id="header-destination" class="destination-card header-destination" hidden aria-label="Rutas de facturas">
         <button id="destination-toggle" class="destination-toggle" type="button" aria-expanded="false" aria-controls="destination-panel">
           <span class="settings-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M12 8.8a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4ZM19 13.4v-2.8l-2-.7-.5-1.2.9-1.9-2-2-1.9.9-1.2-.5-.7-2H8.8l-.7 2-1.2.5L5 4.8l-2 2 .9 1.9-.5 1.2-2 .7v2.8l2 .7.5 1.2-.9 1.9 2 2 1.9-.9 1.2.5.7 2h2.8l.7-2 1.2-.5 1.9.9 2-2-.9-1.9.5-1.2z"/></svg>
@@ -68,11 +79,15 @@
           <span>o haz clic para seleccionar uno o varios PDF</span>
         </button>
 
-        <button id="process-button" class="process-button" type="button" disabled>
+        <div class="rename-actions">
+        <button id="add-more-files" class="outline-button" type="button" hidden>Subir más PDF</button>
+        <button id="process-button" class="process-button" type="button" disabled hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-7 12h6l-1 8 7-12h-6z"/></svg>
           <span>Procesar</span>
         </button>
 
+        </div>
+        <div id="processed-folders" class="processed-folders" hidden></div>
         <div id="notice" class="notice" aria-live="polite" hidden></div>
 
         <section id="files-section" class="files-section" hidden aria-labelledby="files-title">
@@ -476,6 +491,19 @@
       </div>
     </section>
     </main>
+    <aside id="quick-clients" class="quick-clients" aria-label="Consulta rápida de clientes">
+      <section id="quick-client-panel" class="quick-client-panel" hidden aria-labelledby="quick-client-title">
+        <div class="section-title-row"><h2 id="quick-client-title">Consultar clientes</h2><button id="quick-client-close" class="text-button" type="button">Cerrar</button></div>
+        <label for="quick-client-search">Buscar por nombre, RNC o cédula</label>
+        <input id="quick-client-search" class="client-search" type="search" autocomplete="off" placeholder="Buscar cliente…" />
+        <p id="quick-client-status" role="status"></p>
+        <div id="quick-client-results" class="quick-client-results"></div>
+        <div id="quick-client-detail" class="quick-client-detail" hidden></div>
+      </section>
+      <button id="quick-client-toggle" class="quick-client-toggle" type="button" aria-expanded="false" aria-controls="quick-client-panel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M17 4a4 4 0 0 1 0 8M22 21v-2a4 4 0 0 0-3-3.87"/></svg>Clientes
+      </button>
+    </aside>
     <script type="module" src="./app.js"></script>
   </body>
 </html>
