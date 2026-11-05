@@ -987,6 +987,15 @@ document.querySelector('#kalil-folder').addEventListener('click', async event =>
   finally { button.disabled = false; }
 });
 
+document.querySelector('#screenshots-folder').addEventListener('click', async event => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  try {
+    await openLocalPath('C:\\Users\\kalil\\OneDrive\\Imágenes\\Screenshots');
+  } catch (error) { window.alert(error.message); }
+  finally { button.disabled = false; }
+});
+
 function closeQuickClients() {
   quickClients.panel.hidden = true;
   quickClients.toggle.setAttribute('aria-expanded', 'false');
