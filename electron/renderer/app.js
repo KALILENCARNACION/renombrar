@@ -250,6 +250,29 @@ function bindPageNavigation() {
 }
 bindPageNavigation();
 
+const THEME_KEY = 'saa-theme';
+const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+function getThemePreference() {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    return ['light', 'dark', 'system'].includes(saved) ? saved : 'system';
+  } catch { return 'system'; }
+}
+function applyTheme(preference) {
+  const dark = preference === 'dark' || (preference === 'system' && systemDark.matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+}
+function setThemePreference(preference) {
+  try { localStorage.setItem(THEME_KEY, preference); } catch { /* sin almacenamiento */ }
+  applyTheme(preference);
+}
+applyTheme(getThemePreference());
+systemDark.addEventListener('change', () => applyTheme(getThemePreference()));
+document.querySelectorAll('input[name="theme"]').forEach(input => {
+  input.checked = input.value === getThemePreference();
+  input.addEventListener('change', () => { if (input.checked) setThemePreference(input.value); });
+});
+
 function fileName(filePath) {
   return String(filePath).split(/[\\/]/).pop() || filePath;
 }

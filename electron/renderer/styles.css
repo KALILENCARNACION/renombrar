@@ -707,3 +707,143 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Buscador de consulta rápida: el texto escrito debe verse en cualquier tema */
+.quick-client-panel .client-search { min-height: 40px; border: 1px solid var(--border); color: var(--text); background: var(--surface); }
+.quick-client-panel .client-search::placeholder { color: var(--muted); opacity: .75; }
+
+/* Configuración: selector de tema */
+.theme-card h2 { margin: 8px 0 4px; }
+.theme-help { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
+.theme-options { display: grid; gap: 10px; }
+.theme-option { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 13px; background: var(--container); cursor: pointer; }
+.theme-option:hover { border-color: var(--primary); }
+.theme-option:has(input:checked) { border-color: var(--primary); background: var(--soft-blue); }
+.theme-option input { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+.theme-option b { display: block; font-size: 13px; }
+.theme-option small { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+
+/* Modo oscuro */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --primary: #2f8cff;
+  --primary-hover: #5aa3ff;
+  --surface: #0f1419;
+  --container: #182029;
+  --border: #2d3b4a;
+  --text: #e8ecf1;
+  --muted: #a4afbd;
+  --soft-blue: #1d3552;
+  --success: #3ecf95;
+  --danger: #ff7b7b;
+  --shadow: 0 12px 34px rgba(0, 0, 0, .35);
+}
+:root[data-theme="dark"] .app-bar { background: rgba(24, 32, 41, .93); }
+:root[data-theme="dark"] .destination-card,
+:root[data-theme="dark"] .file-card,
+:root[data-theme="dark"] .proposal-hero,
+:root[data-theme="dark"] .proposal-card,
+:root[data-theme="dark"] .proposal-saved-card,
+:root[data-theme="dark"] .proposal-current,
+:root[data-theme="dark"] .pomodoro-metrics div,
+:root[data-theme="dark"] .active-flow-task,
+:root[data-theme="dark"] .sidebar-item,
+:root[data-theme="dark"] .fiscal-form-card,
+:root[data-theme="dark"] .fiscal-table-card,
+:root[data-theme="dark"] .fiscal-version-form,
+:root[data-theme="dark"] .fiscal-version-history,
+:root[data-theme="dark"] .fiscal-message-card,
+:root[data-theme="dark"] .fiscal-message-pills span,
+:root[data-theme="dark"] .client-card,
+:root[data-theme="dark"] .settings-card,
+:root[data-theme="dark"] .placeholder-panel,
+:root[data-theme="dark"] .switch-row,
+:root[data-theme="dark"] .recommendation,
+:root[data-theme="dark"] .client-directory,
+:root[data-theme="dark"] .client-description,
+:root[data-theme="dark"] .fiscal-table td,
+:root[data-theme="dark"] .fiscal-version-table td,
+:root[data-theme="dark"] .fiscal-table-heading,
+:root[data-theme="dark"] .fiscal-message-header { border-color: var(--border); }
+:root[data-theme="dark"] .drop-zone { background: rgba(24, 32, 41, .7); }
+:root[data-theme="dark"] .upload-icon { background: var(--soft-blue); }
+:root[data-theme="dark"] .notice.error { border-color: #6b2f2f; background: #2a1717; }
+:root[data-theme="dark"] .notice.success { border-color: #1f5a45; background: #12231d; }
+:root[data-theme="dark"] .recommendation,
+:root[data-theme="dark"] .file-detail,
+:root[data-theme="dark"] .proposal-saved-card,
+:root[data-theme="dark"] .proposal-current,
+:root[data-theme="dark"] .proposal-preview-box,
+:root[data-theme="dark"] .pomodoro-sidebar,
+:root[data-theme="dark"] .fiscal-table th,
+:root[data-theme="dark"] .fiscal-version-table th,
+:root[data-theme="dark"] .fiscal-table-footer,
+:root[data-theme="dark"] .fiscal-version-history-actions,
+:root[data-theme="dark"] .fiscal-message-pills span,
+:root[data-theme="dark"] .fiscal-message-layout,
+:root[data-theme="dark"] .fiscal-tab,
+:root[data-theme="dark"] .flow-selected-list,
+:root[data-theme="dark"] .fiscal-copy-icon,
+:root[data-theme="dark"] .fiscal-secondary,
+:root[data-theme="dark"] .fiscal-channel { background: var(--surface); }
+:root[data-theme="dark"] .fiscal-channel { color: var(--muted); }
+:root[data-theme="dark"] .timer-card { background: linear-gradient(160deg, #182029 35%, #1b2a3b); border-color: var(--border); }
+:root[data-theme="dark"] .proposal-outline:hover,
+:root[data-theme="dark"] .flow-completed-toggle:hover,
+:root[data-theme="dark"] .completed-toggle:hover,
+:root[data-theme="dark"] .flow-edit:hover,
+:root[data-theme="dark"] .client-icon-button:hover:not(:disabled),
+:root[data-theme="dark"] .client-resource-action:hover,
+:root[data-theme="dark"] .copy-field button:hover,
+:root[data-theme="dark"] .fiscal-tab:hover,
+:root[data-theme="dark"] .fiscal-copy-icon:hover,
+:root[data-theme="dark"] .fiscal-table tbody tr:hover,
+:root[data-theme="dark"] .fiscal-version-table tbody tr:hover,
+:root[data-theme="dark"] .fiscal-version-table tbody tr.active,
+:root[data-theme="dark"] .sidebar-item.pick-source.active,
+:root[data-theme="dark"] .draggable-task:hover,
+:root[data-theme="dark"] .task-icon.tomato:hover { background: var(--soft-blue); }
+:root[data-theme="dark"] .proposal-danger,
+:root[data-theme="dark"] .timer-danger,
+:root[data-theme="dark"] .clear-active,
+:root[data-theme="dark"] .client-delete,
+:root[data-theme="dark"] .client-icon-button.danger,
+:root[data-theme="dark"] .flow-selected-task button { border-color: #6b2f2f; background: #2a1717; }
+:root[data-theme="dark"] .proposal-danger:hover,
+:root[data-theme="dark"] .clear-active:hover,
+:root[data-theme="dark"] .flow-delete:hover,
+:root[data-theme="dark"] .task-icon.trash:hover,
+:root[data-theme="dark"] .flow-task button:hover,
+:root[data-theme="dark"] .client-icon-button.danger:hover:not(:disabled) { background: #3a1e1e; }
+:root[data-theme="dark"] .client-secondary,
+:root[data-theme="dark"] .client-icon-button,
+:root[data-theme="dark"] .client-resource-action,
+:root[data-theme="dark"] .copy-field button { border-color: var(--border); background: var(--container); }
+:root[data-theme="dark"] .flow-toggle,
+:root[data-theme="dark"] .flow-selected-task span,
+:root[data-theme="dark"] .flow-task-dialog-heading button { background: var(--soft-blue); }
+:root[data-theme="dark"] .flow-builder-form input,
+:root[data-theme="dark"] .flow-task-modal-form input,
+:root[data-theme="dark"] .client-description textarea,
+:root[data-theme="dark"] .proposal-field input,
+:root[data-theme="dark"] .proposal-field select,
+:root[data-theme="dark"] .fiscal-form-grid input,
+:root[data-theme="dark"] .fiscal-form-grid select,
+:root[data-theme="dark"] .fiscal-version-grid input,
+:root[data-theme="dark"] .fiscal-version-grid select,
+:root[data-theme="dark"] .fiscal-message-controls select,
+:root[data-theme="dark"] .fiscal-message-controls input,
+:root[data-theme="dark"] .fiscal-message-preview textarea,
+:root[data-theme="dark"] .client-form-grid input,
+:root[data-theme="dark"] .client-wide-field input,
+:root[data-theme="dark"] .client-resource-inline input,
+:root[data-theme="dark"] .client-tss-fields input { color: var(--text); border-color: var(--border); background: var(--surface); }
+:root[data-theme="dark"] .client-form-grid input,
+:root[data-theme="dark"] .client-wide-field input,
+:root[data-theme="dark"] .client-resource-inline input,
+:root[data-theme="dark"] .client-tss-fields input { border-color: var(--primary); }
+:root[data-theme="dark"] .active-flow-progress div { background: var(--border); }
+:root[data-theme="dark"] .arrow { color: #5f7794; }
+:root[data-theme="dark"] .quick-client-panel { box-shadow: 0 16px 50px rgba(0,0,0,.5); }
+:root[data-theme="dark"] .fiscal-metric.primary { background: #1a5fb8; border-color: #1a5fb8; }
+:root[data-theme="dark"] .client-directory { background: #0c151a; }
