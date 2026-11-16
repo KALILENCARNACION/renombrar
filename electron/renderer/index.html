@@ -21,6 +21,7 @@
         <button id="nav-clients" class="nav-item" type="button" data-page="clients-page">Clientes</button>
         <button id="nav-fiscal" class="nav-item" type="button" data-page="fiscal-page">Plantilla fiscal</button>
         <button id="nav-pomodoro" class="nav-item" type="button" data-page="pomodoro-page">Pomodoro</button>
+        <button id="nav-settings" class="nav-item" type="button" data-page="settings-page">Configuración</button>
       </nav>
       <div class="header-shortcuts">
         <button id="kalil-folder" class="header-shortcut" type="button" title="Abrir carpeta de Kalil Encarnación" aria-label="Abrir carpeta de Kalil Encarnación">
@@ -490,6 +491,18 @@
             <button type="submit">Agregar tarea</button>
           </form>
           <p id="pomodoro-flow-task-modal-status" class="task-status"></p>
+        </div>
+      </div>
+    </section>
+    <section id="settings-page" class="page-shell app-page" hidden>
+      <div class="settings-card theme-card">
+        <span class="step-label">CONFIGURACIÓN</span>
+        <h2>Apariencia</h2>
+        <p class="theme-help">Elige cómo quieres ver la aplicación.</p>
+        <div class="theme-options" role="radiogroup" aria-label="Tema">
+          <label class="theme-option"><input type="radio" name="theme" value="light" /><span><b>Claro</b><small>Fondo claro siempre.</small></span></label>
+          <label class="theme-option"><input type="radio" name="theme" value="dark" /><span><b>Oscuro</b><small>Fondo oscuro siempre.</small></span></label>
+          <label class="theme-option"><input type="radio" name="theme" value="system" /><span><b>Sistema</b><small>Sigue el tema de Windows.</small></span></label>
         </div>
       </div>
     </section>
